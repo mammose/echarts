@@ -63,11 +63,12 @@
     "checkheader": "node build/checkHeader.js",
     "lint": "npx eslint --cache --cache-location node_modules/.cache/eslint src/**/*.ts ssr/client/src/**/*.ts extension-src/**/*.ts",
     "lint:fix": "npx eslint --fix src/**/*.ts extension-src/**/*.ts",
-    "lint:dist": "echo 'It might take a while. Please wait ...' && npx jshint --config .jshintrc-dist dist/echarts.js"
+    "lint:dist": "echo 'It might take a while. Please wait ...' && npx jshint --config .jshintrc-dist dist/echarts.js",
+    "postpack": "cpy echarts-6.0.0.tgz ./deps/zrender-6.0.0.tgz ../QuickChart/deps/ --flat"
   },
   "dependencies": {
     "tslib": "2.3.0",
-    "zrender": "6.0.0"
+    "zrender": "./deps/zrender-6.0.0.tgz"
   },
   "devDependencies": {
     "@babel/code-frame": "7.10.4",
@@ -85,6 +86,7 @@
     "@typescript-eslint/parser": "^4.33.0",
     "chalk": "^3.0.0",
     "commander": "2.11.0",
+    "cpy-cli": "^6.0.0",
     "dtslint": "^4.0.5",
     "esbuild": "^0.8.39",
     "eslint": "^7.15.0",

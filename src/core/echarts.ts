@@ -624,6 +624,10 @@ class ECharts extends Eventful<ECEventDefinition> {
         return this._ssr;
     }
 
+    stepToTime(time: number): void {
+        this._zr.stepToTime(time);
+    }
+
     /**
      * Usage:
      * chart.setOption(option, notMerge, lazyUpdate);
