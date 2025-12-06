@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="lib/simpleRequire.js"></script>
+        <script src="lib/config.js"></script>
+        <script src="lib/jquery.min.js"></script>
+        <script src="lib/facePrint.js"></script>
+        <script src="lib/testHelper.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="lib/reset.css">
+    </head>
+    <body>
+        <style>
+            h1 {
+                line-height: 60px;
+                height: 60px;
+                background: #146402;
+                text-align: center;
+                font-weight: bold;
+                color: #eee;
+                font-size: 14px;
+            }
+            .chart {
+                height: 500px;
+            }
+
+            .frame-container {
+                display: flex;
+                align-items: center; /* 垂直居中对齐 */
+                gap: 5px; /* 可选：元素间间距，替代margin */
+            }
+        </style>
+
+        <h1>onZeroAxisIndex specified (onZero on the right y axis)</h1>
+        <div class="chart" id="b"></div>
+
+        <div>
+            <div class="frame-container">
+                <span>总帧数：</span>
+                <div class="slider-value" id="framesValue">0</div>
+            </div>
+            <div class="frame-container">
+                <span>当前帧：</span>
+                <div id="frameValue">0</div>
+            </div>
+            <input type="range" id="animationProgress" min="0" value="0" oninput="onSliderChanged(this.value)">
+            <button id="playBtn" onclick="onPlayClicked()">
+                <i>▶</i> 播放动画
+            </button>
+        </div>
+
+
+        <script>
+            function onSliderChanged(value) {
+                document.getElementById('frameValue').innerHTML=value
+                const keyTime = getKeyTimeByFramePos(value)
+                chart.stepToTime(keyTime)
+            }
+
+            var isPlaying = false;
+            var playbackInterval = null;
+            function onPlayClicked() {
+                if (isPlaying) {
+                    stopAnimation();
+                    document.getElementById('playBtn').innerHTML = '<i>▶</i> 播放动画';
+                } else {
+                    playAnimation();
+                    document.getElementById('playBtn').innerHTML = '<i>⏸</i> 暂停';
+                }
+            }
+
+            // 播放动画
+            function playAnimation() {
+                if (isPlaying) return;
+
+                isPlaying = true;
+
+                playbackInterval = setInterval(() => {
+                    var value = parseInt(document.getElementById('frameValue').innerHTML)
+                    value += 1
+                    if (value >= frames) {
+                        value = 0
+                    }
+
+                    value = Math.min(frames, value)
+                    value = Math.max(0, value)
+
+                    document.getElementById('frameValue').innerHTML=value
+                    document.getElementById("animationProgress").value = value
+                    const keyTime = getKeyTimeByFramePos(value)
+                    chart.stepToTime(keyTime)
+                }, 16); // ~60fps
+            }
+
+            // 停止动画播放
+            function stopAnimation() {
+                if (!isPlaying) return;
+
+                clearInterval(playbackInterval);
+                isPlaying = false;
+            }
+
+            // 计算帧号和关键帧时间的关系
+            // 假设动画时长为animationDuration
+            // 假设动画帧率为25，那么时长转换为帧数就是frames = animationDuration / 1000 * 25
+            // 当framePos为frames-1时，刚好显示出最后一帧的效果，那么帧号framePos和时间关键帧之间的关系为：(framePos * animationDuration) / (frames-1) = keyTime
+            // 即：keyTime = (framePos * animationDuration) / (animationDuration / 1000 * frameRate -1)
+
+            // 传的参数最好不是百分比percent，任意的percent可能转成帧号会有误差，不建议使用。
+            // 所以测试用例增加slider的value，即帧号，而不是百分比
+
+            function getKeyTimeByFramePos(framePos) {
+                const keyTime = (framePos * animationDuration) / (animationDuration / 1000 * frameRate -1)
+                return keyTime
+            }
+
+            var animationDuration = 3000; // 动画时长，单位ms
+            var frameRate = 25; // 动画帧率，单位fps
+
+            var frames = animationDuration / 1000 * frameRate; // 动画总帧数
+            document.getElementById('framesValue').innerHTML=frames
+            const progressSlider = document.getElementById("animationProgress")
+            progressSlider.max = frames - 1;
+
+            var echarts;
+            var chart;
+            var myChart;
+            var groupCategories = [];
+            var groupColors = [];
+
+            require(['echarts'], function (ec) {
+                echarts = ec;
+                chart = myChart = echarts.init(document.getElementById('b'));
+
+                option = {
+                    animationDuration,
+                    legend: {
+                        data: ['left', 'right']
+                    },
+                    xAxis : [
+                        {
+                            type : 'category',
+                            axisLine: {
+                                onZero: true,
+                                onZeroAxisIndex: 1
+                            },
+                            data : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        }
+                    ],
+                    yAxis : [
+                        {
+                            type : 'value'
+                        },
+                        {
+                            type: 'value',
+                            axisLabel: {
+                                formatter: '{value} %'
+                            }
+                        }
+                    ],
+                    series : [
+                        {
+                            name: 'left',
+                            type: 'line',
+                            data:[1000, -520, -2000, -3340, 3900, -330, -5220]
+                        },
+                        {
+                            name: 'right',
+                            type: 'line',
+                            yAxisIndex: 1,
+                            data: [-10, 0, 30, 50]
+                        }
+                    ]
+                };
+
+                chart.setOption(option);
+            });
+        </script>
+    </body>
+</html>
